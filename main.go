@@ -12,6 +12,9 @@ import (
 	csv "github.com/wxiao1002/mqtt-bench/csv"
 )
 
+// 5 秒内 没收到服务端反馈认为是超时，这可调控
+const defaultPubTimeOut = 5
+
 func main() {
 	var (
 		broker               = flag.String("broker", "tcp://localhost:1883", "mqtt broker ")
@@ -37,6 +40,7 @@ func main() {
 	if err != nil {
 		panic(err)
 	}
+
 	for _, r := range clients {
 		c := &client.Mclient{
 			ClientID:    r.ClientId,
@@ -49,6 +53,7 @@ func main() {
 			MsgCount:    *count,
 			MsgQoS:      1,
 			MsgInterval: *messageIntervalInSec,
+			WaitTimeout: defaultPubTimeOut,
 		}
 		go c.RunBench(resCh)
 	}
@@ -102,7 +107,7 @@ func calculateTotalResults(results []*core.BenchResults, totalTime time.Duration
 
 func printResults(results []*core.BenchResults, totals *core.TotalResults) {
 	for _, res := range results {
-		fmt.Printf("======= CLIENT %s =======\n", res.ClientId)
+		fmt.Printf("======= client id  %s =======\n", res.ClientId)
 		fmt.Printf("Ratio:               %.3f (%d/%d)\n", float64(res.Successes)/float64(res.Successes+res.Failures), res.Successes, res.Successes+res.Failures)
 		fmt.Printf("Runtime (s):         %.3f\n", res.RunTime)
 		fmt.Printf("Msg time min (ms):   %.3f\n", res.MsgTimeMin)
@@ -111,7 +116,8 @@ func printResults(results []*core.BenchResults, totals *core.TotalResults) {
 		fmt.Printf("Msg time std (ms):   %.3f\n", res.MsgTimeStd)
 		fmt.Printf("Bandwidth (msg/sec): %.3f\n\n", res.MsgsPerSec)
 	}
-	fmt.Printf("========= TOTAL (%d) =========\n", len(results))
+	fmt.Println()
+	fmt.Printf("========= total (%d) =========\n", len(results))
 	fmt.Printf("Total Ratio:                 %.3f (%d/%d)\n", totals.Ratio, totals.Successes, totals.Successes+totals.Failures)
 	fmt.Printf("Total Runtime (sec):         %.3f\n", totals.TotalRunTime)
 	fmt.Printf("Average Runtime (sec):       %.3f\n", totals.AvgRunTime)

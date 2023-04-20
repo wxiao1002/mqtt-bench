@@ -47,7 +47,6 @@ func (c *Mclient) RunBench(res chan *BenchResults) {
 				times = append(times, m.Arrive.Sub(m.Sent).Seconds()*1000) // in milliseconds
 			}
 		case <-donePub:
-
 			duration := time.Since(started)
 			benchResults.MsgTimeMin = stats.StatsMin(times)
 			benchResults.MsgTimeMax = stats.StatsMax(times)
@@ -90,7 +89,7 @@ func (c *Mclient) pubMsg(in, out chan *Mmsg, doneGen, donePub chan bool) {
 			case m := <-in:
 				m.Sent = time.Now()
 				token := client.Publish(m.Topic, m.QoS, false, m.Payload)
-				res := token.WaitTimeout(time.Second * 30)
+				res := token.WaitTimeout(time.Second * c.WaitTimeout)
 				if !res {
 					log.Printf("Client %v Timeout sending message: %v\n", c.ClientID, token.Error())
 					m.Failure = true
