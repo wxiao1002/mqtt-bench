@@ -1,32 +1,22 @@
-# mqtt-bench-go
-MQTT Broker 测试工具
+# MQTT Bench
+ MQTT 发布消息测试工具
 
-## 如何使用
-1. 打开目录下测试文件，test.csv 编辑你的用户名密码与客户端id,
-2. 修改 .vscode/launch.json 文件
+ ## 快速开始
+ - 准备mqtt 账号密码csv 文件，参照 device_secret.csv
+ - 运行
 ```
-             "-broker","tcp://192.168.1.100:1883",
-             "-topic",  "/v1/12",
-             "-payload", "{\"id\":1}",
-             "-count", "1000",
-             "-csv",  "./test.csv"
+go run main.go
 ```
-3. 使用 vscode 运行
+### 参数解析
+broker ：mqtt broker 地址 <br/>    		
+csvPath：读取用户密码地址，第一列用户，第二列密码 <br/> 
+clients：创建多少个连接，csv 读取到的数目大于等于<br/> 
+benchmarkTime: 压测时间，分钟开始<br/> 
+messageIntervalInSec：生产消息的时间间隔，秒<br/> 
 
-////////////////////////////////
-## 如何运行2
-1. csv 文件，文件内容如下示范
-```
-ClientId,Username,Password
-1,1,1
-2,2,2
-```
-2. 运行 main.go
-```
-go run main.go -broker tcp://192.168.1.100:1883 -topic  /v1/12 -payload {"id":1}  -count 10 -csv  ./test.csv
-```
+## 下一步计划
+- 完成统计
 
-## Installation
-```
-go install github.com/wxiao1002/mqtt-bench@main
-```  
+
+		        
+		
