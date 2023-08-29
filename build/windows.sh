@@ -1,0 +1,1 @@
+GOOS=windows GOARCH=amd64 go build -o mqtt-bench-windows ./main.go

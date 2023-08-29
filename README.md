@@ -2,8 +2,12 @@
  MQTT 发布消息测试工具
 
  ## 快速开始
+
+ ### 编译好的程序包
+- 通过
  - 准备mqtt 账号密码csv 文件，参照 device_secret.csv
  - 运行
+
 ```
 go run main.go
 ```

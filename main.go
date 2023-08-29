@@ -1,22 +1,24 @@
 package main
 
 import (
+	"context"
 	"flag"
 	"log"
 	"strconv"
+	"sync/atomic"
 	"time"
 
-	. "mqtt-bench/client"
+	c "mqtt-bench/client"
 	"mqtt-bench/csv"
 )
 
 func main() {
 	var (
-		broker               = flag.String("broker", "tcp://10.50.6.1:1883", "MQTT broker endpoint as scheme://host:port")
-		csvPath              = flag.String("csv", "device_secret.csv", "device Csv file path")
-		clients              = flag.Int("clients", 1000, "client number")
-		benchmarkTime        = flag.Int("benchmarkTime", 2, "mqtt benchmark time, in minutes")
-		messageIntervalInSec = flag.Int("message-interval", 1, "Time interval in seconds to publish message")
+		broker               = flag.String("broker", "tcp://127.0.0.1:1883", "MQTT broker 地址")
+		csvPath              = flag.String("csv", "device_secret.csv", "设备用户密码配置csv文件地址")
+		clients              = flag.Int("clients", 20, "客户端数量")
+		benchmarkTime        = flag.Int("benchmarkTime", 1, "mqtt 压测时间，分钟")
+		messageIntervalInSec = flag.Int("message-interval", 1, "生成消息间隔")
 	)
 	var clientPrefix string = "mqtt-benchmark"
 	var qos int = 1
@@ -35,19 +37,17 @@ func main() {
 		log.Fatalf("Invalid arguments: number of clients should be > 1, given: %v", clients)
 	}
 
-	timeout := make(chan bool, 1)
-	exit := make(chan bool)
+	ctx, cancel := context.WithCancel(context.Background())
 	go func() {
 		time.Sleep(time.Duration(*benchmarkTime) * time.Minute)
-		timeout <- true
-		exit <- true
+		cancel()
 	}()
 	for i, r := range clientCSV {
 		if i >= *clients {
 			break
 		}
-		c := &Client{
-			ID:              i,
+		c := &c.Client{
+			ID:              i + 1,
 			ClientID:        clientPrefix + strconv.Itoa(i),
 			BrokerURL:       *broker,
 			BrokerUser:      r.Username,
@@ -56,8 +56,9 @@ func main() {
 			WaitTimeout:     time.Duration(wait) * time.Millisecond,
 			MessageInterval: *messageIntervalInSec,
 		}
-		go c.RunBench(timeout)
+		go c.RunBench(ctx)
 	}
-	<-exit
-	log.Panicln("exit ing")
+	<-ctx.Done()
+	log.Printf("总消息数据:%v,Succ:%v,Error:%v,Timeout:%v", atomic.LoadInt64(&c.MsgSeq), atomic.LoadInt64(&c.Succ), atomic.LoadInt64(&c.Failure), atomic.LoadInt64(&c.Timeout))
+	log.Println("exit program")
 }

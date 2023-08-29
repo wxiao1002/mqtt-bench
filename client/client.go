@@ -1,6 +1,7 @@
 package client
 
 import (
+	"context"
 	"encoding/json"
 	"fmt"
 	"log"
@@ -11,15 +12,17 @@ import (
 	mqtt "github.com/eclipse/paho.mqtt.golang"
 )
 
-// Message describes a message
+// Message
 type Message struct {
 	Topic   string
 	QoS     byte
 	Payload string
 }
 
-var MSG_SEQ_F float64
-var MSG_SEQ int64
+var MsgSeq int64
+var Succ int64
+var Failure int64
+var Timeout int64
 
 // mqtt client
 type Client struct {
@@ -33,22 +36,22 @@ type Client struct {
 	MessageInterval int
 }
 
-func (c *Client) RunBench(quit <-chan bool) {
-	newMsgs := make(chan *Message)
-	// start generator msg
-	go c.genMessages(newMsgs, quit)
-	// start publisher msg
-	go c.pubMessages(newMsgs, quit)
+// 运行压测
+func (c *Client) RunBench(ctx context.Context) {
+	message := make(chan *Message)
+	go c.genMessages(message, ctx)
+	go c.pubMessages(message, ctx)
 }
 
-func (c *Client) genMessages(ch chan *Message, quit <-chan bool) {
+// 生成 消息
+func (c *Client) genMessages(out chan<- *Message, quit context.Context) {
 	for {
 		select {
-		case <-quit:
+		case <-quit.Done():
 			return
 		default:
 			var payload = c.generatePayload()
-			ch <- &Message{
+			out <- &Message{
 				Topic:   "api/" + c.BrokerUser + "/attributes",
 				QoS:     c.MsgQoS,
 				Payload: payload,
@@ -59,30 +62,23 @@ func (c *Client) genMessages(ch chan *Message, quit <-chan bool) {
 
 }
 
-func (c *Client) pubMessages(in chan *Message, quit <-chan bool) {
+// 发送消息
+func (c *Client) pubMessages(in <-chan *Message, quit context.Context) {
 	onConnected := func(client mqtt.Client) {
-		ctr, successNum, errorNum, timeoutNum := 0, 0, 0, 0
+		log.Printf("CLIENT %v  connected to the broker,Will publish msg\n", c.ID)
 		for {
 			select {
 			case m := <-in:
 				token := client.Publish(m.Topic, m.QoS, false, m.Payload)
 				res := token.WaitTimeout(c.WaitTimeout)
 				if !res {
-					log.Printf("CLIENT %v Timeout sending message: %v\n", c.ID, token.Error())
-					timeoutNum++
+					atomic.AddInt64(&Timeout, 1)
 				} else if token.Error() != nil {
-					log.Printf("CLIENT %v Error sending message: %v\n", c.ID, token.Error())
-					errorNum++
+					atomic.AddInt64(&Failure, 1)
 				} else {
-					log.Printf("CLIENT %v is  send messages,seq: %d\n", c.ID, atomic.LoadInt64(&MSG_SEQ))
-					successNum++
+					atomic.AddInt64(&Succ, 1)
 				}
-				if ctr > 0 && ctr%100 == 0 {
-					log.Printf("CLIENT %v published %v messages:[succ=%v,err=%v,timeout=%v] and keeps publishing...\n", c.ID, ctr, successNum, errorNum, timeoutNum)
-				}
-				ctr++
-			case <-quit:
-				client.Disconnect(0)
+			case <-quit.Done():
 				return
 			}
 		}
@@ -95,7 +91,7 @@ func (c *Client) pubMessages(in chan *Message, quit <-chan bool) {
 		SetAutoReconnect(true).
 		SetOnConnectHandler(onConnected).
 		SetConnectionLostHandler(func(client mqtt.Client, reason error) {
-			log.Printf("CLIENT %v lost connection to the broker: %v. Will reconnect...\n", c.ID, reason.Error())
+			log.Printf("CLIENT %v lost connection to the broker: %v. Will reconnect\n", c.ID, reason.Error())
 		})
 	if c.BrokerUser != "" && c.BrokerPass != "" {
 		opts.SetUsername(c.BrokerUser)
@@ -105,7 +101,6 @@ func (c *Client) pubMessages(in chan *Message, quit <-chan bool) {
 	client := mqtt.NewClient(opts)
 	token := client.Connect()
 	token.Wait()
-
 	if token.Error() != nil {
 		log.Printf("CLIENT %v connecting to the broker,has error: %v\n", c.ID, token.Error())
 	}
@@ -146,9 +141,9 @@ type payload struct {
 }
 
 func (c *Client) generatePayload() string {
-	atomic.AddInt64(&MSG_SEQ, 1)
+	atomic.AddInt64(&MsgSeq, 1)
 	p := &payload{
-		Seq: MSG_SEQ,
+		Seq: atomic.LoadInt64(&MsgSeq),
 		N1:  rand.Int63(),
 		N2:  rand.Int63(),
 		N3:  rand.Int63(),
@@ -159,16 +154,16 @@ func (c *Client) generatePayload() string {
 		N8:  rand.Int63(),
 		N9:  rand.Int63(),
 		N10: rand.Int63(),
-		F1:  MSG_SEQ_F + 0.000001,
-		F2:  MSG_SEQ_F + 0.000002,
-		F3:  MSG_SEQ_F + 0.000003,
-		F4:  MSG_SEQ_F + 0.000004,
-		F5:  MSG_SEQ_F + 0.000005,
-		F6:  MSG_SEQ_F + 0.000006,
-		F7:  MSG_SEQ_F + 0.000007,
-		F8:  MSG_SEQ_F + 0.000008,
-		F9:  MSG_SEQ_F + 0.000009,
-		F10: MSG_SEQ_F + 0.00001,
+		F1:  rand.Float64(),
+		F2:  rand.Float64(),
+		F3:  rand.Float64(),
+		F4:  rand.Float64(),
+		F5:  rand.Float64(),
+		F6:  rand.Float64(),
+		F7:  rand.Float64(),
+		F8:  rand.Float64(),
+		F9:  rand.Float64(),
+		F10: rand.Float64(),
 		S1:  RandStringBytes(10),
 		S2:  RandStringBytes(11),
 		S3:  RandStringBytes(20),
@@ -184,7 +179,6 @@ func (c *Client) generatePayload() string {
 	if err == nil {
 		return string(b1)
 	}
-	log.Printf("CLIENT %v SEQ: %v\n", c.ID, &MSG_SEQ)
 	return ""
 }
 
