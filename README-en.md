@@ -31,4 +31,6 @@ go run main.go -csvPath /root/clients.csv -broker tcp://localhost:1883 -clients 
 [![pPdN091.png](https://s1.ax1x.com/2023/08/29/pPdN091.png)](https://imgse.com/i/pPdN091)
 
 # packaging
-- sh build/lnux.sh	or linux_arm.sh windows.sh
+- sh build/linux.sh	
+- sh build/linux_arm.sh 
+- sh build/windows.sh  
