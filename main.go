@@ -14,11 +14,12 @@ import (
 
 func main() {
 	var (
-		broker               = flag.String("broker", "tcp://127.0.0.1:1883", "MQTT broker 地址")
-		csvPath              = flag.String("csv", "device_secret.csv", "设备用户密码配置csv文件地址")
-		clients              = flag.Int("clients", 20, "客户端数量")
-		benchmarkTime        = flag.Int("benchmarkTime", 1, "mqtt 压测时间，分钟")
-		messageIntervalInSec = flag.Int("message-interval", 1, "生成消息间隔")
+		broker          = flag.String("broker", "tcp://127.0.0.1:1883", "MQTT broker 地址")
+		csvPath         = flag.String("csvPath", "device_secret.csv", "设备用户密码配置csv文件地址")
+		clients         = flag.Int("clients", 20, "客户端数量")
+		benchmarkTime   = flag.Int("benchmarkTime", 1, "mqtt 压测时间，分钟")
+		messageInterval = flag.Int("messageInterval", 1, "生成消息间隔")
+		topic           = flag.String("topic", "", "MQTT 发布主题")
 	)
 	var clientPrefix string = "mqtt-benchmark"
 	var qos int = 1
@@ -54,7 +55,11 @@ func main() {
 			BrokerPass:      r.Password,
 			MsgQoS:          byte(qos),
 			WaitTimeout:     time.Duration(wait) * time.Millisecond,
-			MessageInterval: *messageIntervalInSec,
+			MessageInterval: *messageInterval,
+			Topic:           *topic,
+		}
+		if c.Topic == "" {
+			c.Topic = "api/" + c.BrokerUser + "/attributes"
 		}
 		go c.RunBench(ctx)
 	}

@@ -27,6 +27,7 @@ var Timeout int64
 // mqtt client
 type Client struct {
 	ID              int
+	Topic           string
 	ClientID        string
 	BrokerURL       string
 	BrokerUser      string
@@ -52,7 +53,7 @@ func (c *Client) genMessages(out chan<- *Message, quit context.Context) {
 		default:
 			var payload = c.generatePayload()
 			out <- &Message{
-				Topic:   "api/" + c.BrokerUser + "/attributes",
+				Topic:   c.Topic,
 				QoS:     c.MsgQoS,
 				Payload: payload,
 			}
