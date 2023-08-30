@@ -16,7 +16,7 @@ func main() {
 	var (
 		broker          = flag.String("broker", "tcp://127.0.0.1:1883", "MQTT broker 地址")
 		csvPath         = flag.String("csvPath", "device_secret.csv", "设备用户密码配置csv文件地址")
-		clients         = flag.Int("clients", 20, "客户端数量")
+		clients         = flag.Int("clients", 450, "客户端数量")
 		benchmarkTime   = flag.Int("benchmarkTime", 1, "mqtt 压测时间，分钟")
 		messageInterval = flag.Int("messageInterval", 1, "生成消息间隔")
 		topic           = flag.String("topic", "", "MQTT 发布主题")
@@ -39,10 +39,10 @@ func main() {
 	}
 
 	ctx, cancel := context.WithCancel(context.Background())
-	go func() {
+	exit := func() {
 		time.Sleep(time.Duration(*benchmarkTime) * time.Minute)
 		cancel()
-	}()
+	}
 	for i, r := range clientCSV {
 		if i >= *clients {
 			break
@@ -63,7 +63,7 @@ func main() {
 		}
 		go c.RunBench(ctx)
 	}
-	<-ctx.Done()
+	exit()
 	log.Printf("总消息数据:%v,Succ:%v,Error:%v,Timeout:%v", atomic.LoadInt64(&c.MsgSeq), atomic.LoadInt64(&c.Succ), atomic.LoadInt64(&c.Failure), atomic.LoadInt64(&c.Timeout))
 	log.Println("exit program")
 }
