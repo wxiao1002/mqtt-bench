@@ -4,8 +4,11 @@ import (
 	"context"
 	"flag"
 	"log"
+	"os"
+	"os/signal"
 	"strconv"
 	"sync/atomic"
+	"syscall"
 	"time"
 
 	c "mqtt-bench/client"
@@ -14,16 +17,16 @@ import (
 
 func main() {
 	var (
-		broker          = flag.String("broker", "tcp://10.50.6.1:1883", "MQTT broker 地址")
+		broker          = flag.String("broker", "tcp://127.0.0.1:1883", "MQTT broker 地址")
 		csvPath         = flag.String("csvPath", "device_secret.csv", "设备用户密码配置csv文件地址")
-		clients         = flag.Int("clients", 450, "客户端数量")
+		clients         = flag.Int("clients", 1, "客户端数量")
 		benchmarkTime   = flag.Int("benchmarkTime", 1, "mqtt 压测时间，分钟")
 		messageInterval = flag.Int("messageInterval", 1, "生成消息间隔")
 		topic           = flag.String("topic", "", "MQTT 发布主题")
 	)
 	var clientPrefix string = "mqtt-benchmark"
 	var qos int = 1
-	var wait int = 1000
+	var wait int = 6000
 	flag.Parse()
 	if *csvPath == "" {
 		log.Fatalf("Invalid arguments: csv  should be is file path, given: %v", *csvPath)
@@ -61,9 +64,20 @@ func main() {
 		if c.Topic == "" {
 			c.Topic = "api/" + c.BrokerUser + "/attributes"
 		}
+		if i%50 == 0 {
+			time.Sleep(time.Second)
+		}
 		go c.RunBench(ctx)
 	}
-	exit()
+	WaitTerm(exit)
 	log.Printf("总消息数据:%v,Succ:%v,Error:%v,Timeout:%v", atomic.LoadInt64(&c.MsgSeq), atomic.LoadInt64(&c.Succ), atomic.LoadInt64(&c.Failure), atomic.LoadInt64(&c.Timeout))
 	log.Println("exit program")
+}
+
+func WaitTerm(cancel func()) {
+	sigc := make(chan os.Signal, 1)
+	signal.Notify(sigc, syscall.SIGINT, syscall.SIGTERM)
+	defer signal.Stop(sigc)
+	<-sigc
+	cancel()
 }
