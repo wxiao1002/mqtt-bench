@@ -40,12 +40,12 @@ type Client struct {
 // 运行压测
 func (c *Client) RunBench(ctx context.Context) {
 	message := make(chan *Message)
-	go c.genMessages(message, ctx)
-	go c.pubMessages(message, ctx)
+	go c.generateMessages(message, ctx)
+	go c.pubishMessages(message, ctx)
 }
 
 // 生成 消息
-func (c *Client) genMessages(out chan<- *Message, quit context.Context) {
+func (c *Client) generateMessages(out chan<- *Message, quit context.Context) {
 	for {
 		select {
 		case <-quit.Done():
@@ -64,7 +64,7 @@ func (c *Client) genMessages(out chan<- *Message, quit context.Context) {
 }
 
 // 发送消息
-func (c *Client) pubMessages(in <-chan *Message, quit context.Context) {
+func (c *Client) pubishMessages(in <-chan *Message, quit context.Context) {
 	onConnected := func(client mqtt.Client) {
 		log.Printf("CLIENT %v  connected to the broker,Will publish msg\n", c.ID)
 		for {
