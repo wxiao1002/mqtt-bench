@@ -92,6 +92,8 @@ func (c *Client) pubishMessages(in <-chan *Message, quit context.Context) {
 		SetCleanSession(true).
 		SetAutoReconnect(true).
 		SetOnConnectHandler(onConnected).
+		SetConnectRetryInterval(3).
+		SetConnectTimeout(time.Duration(10) * time.Second).
 		SetConnectionLostHandler(func(client mqtt.Client, reason error) {
 			log.Printf("CLIENT %v lost connection to the broker: %v. Will reconnect\n", c.ID, reason.Error())
 		})
