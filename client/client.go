@@ -3,7 +3,6 @@ package client
 import (
 	"context"
 	"encoding/json"
-	"fmt"
 	"log"
 	"math/rand"
 	"sync/atomic"
@@ -67,7 +66,7 @@ func (c *Client) generateMessages(out chan<- *Message, quit context.Context) {
 // 发送消息
 func (c *Client) pubishMessages(in <-chan *Message, quit context.Context) {
 	onConnected := func(client mqtt.Client) {
-		log.Printf("CLIENT %v  connected to the broker,Will publish msg\n", c.ID)
+		log.Printf("CLIENT %v  connected to the broker,Will publish msg\n", c.ClientID)
 		for {
 			select {
 			case m := <-in:
@@ -88,14 +87,14 @@ func (c *Client) pubishMessages(in <-chan *Message, quit context.Context) {
 
 	opts := mqtt.NewClientOptions().
 		AddBroker(c.BrokerURL).
-		SetClientID(fmt.Sprintf("%s-%v", c.ClientID, c.ID)).
+		SetClientID(c.ClientID).
 		SetCleanSession(true).
 		SetAutoReconnect(true).
 		SetOnConnectHandler(onConnected).
 		SetConnectRetryInterval(3).
 		SetConnectTimeout(time.Duration(10) * time.Second).
 		SetConnectionLostHandler(func(client mqtt.Client, reason error) {
-			log.Printf("CLIENT %v lost connection to the broker: %v. Will reconnect\n", c.ID, reason.Error())
+			log.Printf("CLIENT %v lost connection to the broker: %v. Will reconnect\n", c.ClientID, reason.Error())
 		})
 	if c.BrokerUser != "" && c.BrokerPass != "" {
 		opts.SetUsername(c.BrokerUser)
@@ -103,10 +102,8 @@ func (c *Client) pubishMessages(in <-chan *Message, quit context.Context) {
 	}
 
 	client := mqtt.NewClient(opts)
-	token := client.Connect()
-	token.Wait()
-	if token.Error() != nil {
-		log.Printf("CLIENT %v connecting to the broker,has error: %v\n", c.ID, token.Error())
+	if token := client.Connect(); token.Wait() && token.Error() != nil {
+		log.Printf("CLIENT %v connecting to the broker,has error: %v\n", c.ClientID, token.Error())
 	}
 }
 

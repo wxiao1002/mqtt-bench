@@ -49,7 +49,7 @@ func main() {
 		}
 		c := &c.Client{
 			ID:              i + 1,
-			ClientID:        clientPrefix + strconv.Itoa(i),
+			ClientID:        clientPrefix + strconv.Itoa(i+1),
 			BrokerURL:       *broker,
 			BrokerUser:      r.Username,
 			BrokerPass:      r.Password,
