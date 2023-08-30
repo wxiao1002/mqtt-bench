@@ -19,7 +19,7 @@ func main() {
 	var (
 		broker          = flag.String("broker", "tcp://127.0.0.1:1883", "MQTT broker 地址")
 		csvPath         = flag.String("csvPath", "device_secret.csv", "设备用户密码配置csv文件地址")
-		clients         = flag.Int("clients", 1, "客户端数量")
+		clients         = flag.Int("clients", 1000, "客户端数量")
 		benchmarkTime   = flag.Int("benchmarkTime", 1, "mqtt 压测时间，分钟")
 		messageInterval = flag.Int("messageInterval", 1, "生成消息间隔")
 		topic           = flag.String("topic", "", "MQTT 发布主题")
