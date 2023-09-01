@@ -35,4 +35,7 @@ go run main.go -csvPath /root/clients.csv -broker tcp://localhost:1883 -clients 
 # 打包
 - sh build/linux.sh	
 - sh build/linux_arm.sh 
-- sh build/windows.sh  
+- sh build/windows.sh
+
+# english doc
+[./README-en.md]
