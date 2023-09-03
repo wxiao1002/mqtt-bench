@@ -23,6 +23,8 @@ var Succ int64
 var Failure int64
 var Timeout int64
 
+const letterBytes = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ"
+
 // mqtt client
 type Client struct {
 	ID              int
@@ -183,8 +185,6 @@ func (c *Client) generatePayload() string {
 	}
 	return ""
 }
-
-const letterBytes = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ"
 
 func RandStringBytes(n int) string {
 	b := make([]byte, n)

@@ -26,7 +26,7 @@ func main() {
 	var wait int = 6000
 	flag.Parse()
 	if *csvPath == "" {
-		log.Fatalf("Invalid arguments: csv  should be is file path, given: %v", *csvPath)
+		log.Fatalf("Invalid arguments: csvPath  should be is file path, given: %v", *csvPath)
 		return
 	}
 
@@ -57,15 +57,12 @@ func main() {
 		if c.Topic == "" {
 			c.Topic = "api/" + c.BrokerUser + "/attributes"
 		}
-		if i%50 == 0 {
-			time.Sleep(time.Second)
-		}
 		go c.RunBench(ctx)
 	}
 	func() {
 		time.Sleep(time.Duration(*benchmarkTime) * time.Minute)
 		cancel()
 	}()
-	log.Printf("总消息数据:%v,Succ:%v,Error:%v,Timeout:%v", atomic.LoadInt64(&c.MsgSeq), atomic.LoadInt64(&c.Succ), atomic.LoadInt64(&c.Failure), atomic.LoadInt64(&c.Timeout))
-	log.Println("exit program")
+	log.Printf("Message [Total:%v,Succ:%v,Error:%v,Timeout:%v]", atomic.LoadInt64(&c.MsgSeq), atomic.LoadInt64(&c.Succ), atomic.LoadInt64(&c.Failure), atomic.LoadInt64(&c.Timeout))
+	log.Println("go bench exit program")
 }
