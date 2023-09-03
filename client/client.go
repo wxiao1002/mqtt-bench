@@ -40,8 +40,7 @@ type Client struct {
 
 // 运行压测
 func (c *Client) RunBench(ctx context.Context) {
-	// 增加100 容量，防止发送影响生成
-	message := make(chan *Message, 100)
+	message := make(chan *Message,1)
 	go c.generateMessages(message, ctx)
 	go c.pubishMessages(message, ctx)
 }
