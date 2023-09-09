@@ -14,9 +14,8 @@ import (
 
 func main() {
 	var (
-		broker          = flag.String("broker", "tcp://10.50.6.1:1883", "MQTT broker 地址")
+		broker          = flag.String("broker", "tcp://10.50.3.6:1883", "MQTT broker 地址")
 		csvPath         = flag.String("csvPath", "device_secret.csv", "设备用户密码配置csv文件地址")
-		clients         = flag.Int("clients", 1000, "客户端数量")
 		benchmarkTime   = flag.Int("benchmarkTime", 1, "mqtt 压测时间，分钟")
 		messageInterval = flag.Int("messageInterval", 1, "生成消息间隔")
 		topic           = flag.String("topic", "", "MQTT 发布主题")
@@ -34,15 +33,9 @@ func main() {
 	if err != nil {
 		panic(err)
 	}
-	if *clients < 1 {
-		log.Fatalf("Invalid arguments: number of clients should be > 1, given: %v", clients)
-	}
 
 	ctx, cancel := context.WithCancel(context.Background())
 	for i, r := range clientCSV {
-		if i >= *clients {
-			break
-		}
 		c := &c.Client{
 			ID:              i + 1,
 			ClientID:        clientPrefix + strconv.Itoa(i+1),
@@ -56,6 +49,9 @@ func main() {
 		}
 		if c.Topic == "" {
 			c.Topic = "api/" + c.BrokerUser + "/attributes"
+		}
+		if i%500 == 0 {
+			time.Sleep(time.Second * 2)
 		}
 		go c.RunBench(ctx)
 	}

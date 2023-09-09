@@ -110,7 +110,6 @@ func (c *Client) pubishMessages(in <-chan *Message, quit context.Context) {
 }
 
 type payload struct {
-	Seq int64   `json:"Seq"`
 	N1  int64   `json:"N1"`
 	N2  int64   `json:"N2"`
 	N3  int64   `json:"N3"`
@@ -146,7 +145,6 @@ type payload struct {
 func (c *Client) generatePayload() string {
 	atomic.AddInt64(&MsgSeq, 1)
 	p := &payload{
-		Seq: atomic.LoadInt64(&MsgSeq),
 		N1:  rand.Int63(),
 		N2:  rand.Int63(),
 		N3:  rand.Int63(),
