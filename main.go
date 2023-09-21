@@ -4,7 +4,6 @@ import (
 	"context"
 	"flag"
 	"log"
-	"strconv"
 	"sync/atomic"
 	"time"
 
@@ -14,7 +13,7 @@ import (
 
 func main() {
 	var (
-		broker          = flag.String("broker", "tcp://10.50.3.6:1883", "MQTT broker 地址")
+		broker          = flag.String("broker", "tcp://127.0.0.1:1883", "MQTT broker 地址")
 		csvPath         = flag.String("csvPath", "device_secret.csv", "设备用户密码配置csv文件地址")
 		benchmarkTime   = flag.Int("benchmarkTime", 1, "mqtt 压测时间，分钟")
 		messageInterval = flag.Int("messageInterval", 1, "生成消息间隔")
@@ -35,10 +34,11 @@ func main() {
 	}
 
 	ctx, cancel := context.WithCancel(context.Background())
+	time.Sleep(time.Second * 30)
 	for i, r := range clientCSV {
 		c := &c.Client{
 			ID:              i + 1,
-			ClientID:        clientPrefix + strconv.Itoa(i+1),
+			ClientID:        clientPrefix + r.Username,
 			BrokerURL:       *broker,
 			BrokerUser:      r.Username,
 			BrokerPass:      r.Password,
@@ -49,9 +49,6 @@ func main() {
 		}
 		if c.Topic == "" {
 			c.Topic = "api/" + c.BrokerUser + "/attributes"
-		}
-		if i%500 == 0 {
-			time.Sleep(time.Second * 2)
 		}
 		go c.RunBench(ctx)
 	}

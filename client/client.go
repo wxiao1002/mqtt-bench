@@ -40,7 +40,7 @@ type Client struct {
 
 // 运行压测
 func (c *Client) RunBench(ctx context.Context) {
-	message := make(chan *Message,1)
+	message := make(chan *Message, 1000)
 	go c.generateMessages(message, ctx)
 	go c.pubishMessages(message, ctx)
 }
@@ -92,7 +92,7 @@ func (c *Client) pubishMessages(in <-chan *Message, quit context.Context) {
 		SetCleanSession(true).
 		SetAutoReconnect(true).
 		SetOnConnectHandler(onConnected).
-		SetConnectRetryInterval(3).
+		// SetConnectRetryInterval(3).
 		SetKeepAlive(60).
 		SetConnectTimeout(time.Duration(20) * time.Second).
 		SetConnectionLostHandler(func(client mqtt.Client, reason error) {
